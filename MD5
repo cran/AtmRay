@@ -1,9 +1,9 @@
-e3a2f9481ed8b9684ca3a700f7c094fb *DESCRIPTION
+5ec06a2910933788f45b4d200109ce52 *DESCRIPTION
 4ef26935eb000a27a47c3422493d7501 *NAMESPACE
 ceae6651c22ac7aef9d9f352fea90863 *R/A2P.lin.R
 9407b696bc752102e06a0927088a4d91 *R/CheckAtm.lin.R
 e6e300bf328a3f978fdee2f4e91c40f0 *R/MakeArrivals.lin.R
-3b88726783e821530973f6fcf29ec501 *R/MakeAtmList.lin.R
+8c11b03438f93644e8977e896d492c4d *R/MakeAtmList.lin.R
 152e6b802343c9604cb7903858bc6bd2 *R/P2A.lin.R
 64ea6c64daebf478a0e28cb2ba33413f *R/P4X.lin.R
 d013c4bfb7a6fed7a4f7120ef4da95b4 *R/P4X.lin_no_c.R
@@ -17,7 +17,7 @@ ccdfcef2367239285aa60a0da88c2ef8 *R/PlotAtm.lin.R
 1f325bff9a6ce2eaaadaa6b51380e48b *R/sky.colors.R
 fa2fe596c71e55657d949674714089c6 *man/A2P.lin.Rd
 058776f5fb5a0c8aebe7ded0788746c7 *man/CheckAtm.lin.Rd
-c1f04ace6086fdd640d3c6655e9e2f8a *man/MakeArrivals.lin.Rd
+1aa72906f7d4d15256e48142175d126c *man/MakeArrivals.lin.Rd
 212fc819f9edbab8d0300a9d85787b0b *man/MakeAtmList.lin.Rd
 8d7653cc21b2e122f351b188e2720d98 *man/P4X.lin.Rd
 d2836e8eedb20ac53966305b7ff2e0ba *man/P4X.lin_no_c.Rd
@@ -29,4 +29,4 @@ dcb2d097a4b83b36825acb6352a29158 *man/ShadowZone.lin.Rd
 2737fade80514b83a1ee0bce077943d9 *man/meshgrid.Rd
 c10bf1bf2b2d2eb34dc945289cea6de4 *man/meshgridn.Rd
 d49c5a180edf03f494f9a569b5d8cf97 *man/sky.colors.Rd
-e91f77364cbdd02f24bfac7e1f74933d *src/AtmRay.c
+3aa264721f96b42cb055d21a8fc6bbbc *src/AtmRay.c

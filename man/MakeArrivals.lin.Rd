@@ -32,8 +32,7 @@ MakeArrivals.lin(xs, ys, zs, xr, yr, zr, dt, nt, timing, ATM = CheckAtm.lin(list
 \author{Jake Anderson}
 
 \examples{
-MakeArrivals.lin(xs = c(100, 150), ys = c(100, 150), zs = c(100, 150), xr = 0, yr = 0, zr = 0,
-dt = 0.01, nt = 100, timing = c(0, 0), ATM = CheckAtm.lin())
+MakeArrivals.lin(xs = c(100, 150), ys = c(100, 150), zs = c(100, 150), xr = 0, yr = 0, zr = 0, dt = 0.01, nt = 100, timing = c(0, 0), ATM = CheckAtm.lin())
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
