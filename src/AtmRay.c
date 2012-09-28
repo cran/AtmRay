@@ -4,132 +4,131 @@
 #include <R.h>
 #include <Rmath.h>
 
-void proplin(double *p, double *az, const double *zs, const double *zr, const double *c0, const double *gc, const double *wx0, const double *gwx, const double *wy0, const double *gwy, const double *rho0, const double *grho, double *x, double *y, double *t, double *A)
+void proplin(double *p, double *az, double *zs, double *zr, double *c0, double *gc, double *wx0, double *gwx, double *wy0, double *gwy, double *rho0, double *grho, double *x, double *y, double *t, double *A)
 {
-  //  Rprintf("p %f, az %f, zs %f, zr %f, c0 %f, gc %f, wx0 %f, gwx %f, wy0 %f, gwy %f, rho0 %f, grho %f, x %f, y %f, t %f, A %f", *p, *az, *zs, *zr, *c0, *gc, *wx0, *gwx, *wy0, *gwy, *rho0, *grho, *x, *y, *t, *A);
 
-  double u0, v0, c0_eff, gu, gv, gc_eff, cs, cr, epss, epsr, rad, T, dpdx, E, lambdar, tan, us, ur, dthdx;
+  double u0, v0, c0_eff, gu, gv, gc_eff, cs, cr, epss, epsr, rad, T, dpdx, Pow_dens, impedance, tan, us, ur, dthdx;
   double pi = M_PI;
   double p_eps = pow(10, -8);
   double gc_eps = pow(10, -5);
 
-  // this fails for p == 0, so set p as 10^-8
+  // this function fails for p == 0, so set low p as 10^-8
   if(fabs(*p) < p_eps){
     *p = p_eps;
   }
-  //Rprintf("1\n");
-  // Define effective sound speed slope and intercept
+
+  // Define radial/tangential wind/gradient
   u0 = cos(*az * pi/180) * *wy0 + sin(*az * pi/180) * *wx0;
   v0 = sin(*az * pi/180) * *wy0 - cos(*az * pi/180) * *wx0;
-  c0_eff = *c0 + u0;
   gu = cos(*az * pi/180) * *gwy + sin(*az * pi/180) * *gwx;
   gv = sin(*az * pi/180) * *gwy - cos(*az * pi/180) * *gwx;
-  gc_eff = *gc + gu;
 
   // function crashes when gc = 0
-  if(fabs(gc_eff) < gc_eps){
-    gc_eff = -gc_eps;
+  if(fabs(*gc) < gc_eps){
+    *gc = -gc_eps;
   }
-  //Rprintf("2\n");
 
-  // Define source/receiver effective sound speed
-  //  cs = c0_eff + *zs * gc_eff;
-  //  cr = c0_eff + *zr * gc_eff;
+  // Define source/receiver sound speed and wind
   cs = *c0 + *zs * *gc;
   cr = *c0 + *zr * *gc;
   us = u0 + *zs * gu;
   ur = u0 + *zr * gu;
-  //Rprintf("3\n");
-  
-  // These are useful variables to define separately
-  //  epss = sqrt(1 - *p * *p * cs * cs);
-  //  epsr = sqrt(1 - *p * *p * cr * cr);
-  // Calculate displacement, time, amplitude
-  // Equations from Jeff's notes for Villarrica paper from Slotnick
-  // JFA 9/13/2012: YOU CANNOT USE EFFECTIVE SOUND SPEED IN 3D!!! Rewriting using equations from Garces and numeric integration (farther down).
-  //  rad = (*zs - *zr) * (epss - epsr)/(cr - cs)/ *p; // radial distance traveled//BAD EQUATION!
-  
-  //Rprintf("4\n");
-  //Rprintf("%f\n", (*zs - *zr)/(cs - cr));
-  //Rprintf("%f\n", (cs * (1 + epsr))/(cr * (1 + epss)));
-  //Rprintf("%f\n", log((cs * (1 + epsr))/(cr * (1 + epss))));
-  //Rprintf("%f\n", (*zs - *zr)/(cs - cr) * log((cs * (1 + epsr))/(cr * (1 + epss))));
-  //*t = fabs((*zs - *zr)/(cs - cr) * log((cs * (1 + epsr))/(cr * (1 + epss)))); // traveltime
 
-  // numerical integration (trapezoidal) of equations from Garces et al.
-  *t = 0;
-  rad = 0;
-  tan = 0;
-  int nsteps = 100;
-  double dz = (*zs - *zr)/nsteps;
-  double zi1, zi2, s1, s2, u1, u2, sqrt1, sqrt2;
-  double p2 = *p + pow(10, -9); // for use in computing rad2, which is used to find dp/dx
-  double rad2 = 0;
-  double wind_offset = 0;
-  double wind_offset2 = 0;
-  for(int i = 0; i < nsteps; i++){
-    zi1 = *zr + i * dz;
-    zi2 = *zr + (i+1)*dz;
-    s1 = 1/(*c0 + *gc * zi1);
-    s2 = 1/(*c0 + *gc * zi2);
-    u1 = u0 + gu * zi1;
-    u2 = u0 + gu * zi2;
-    sqrt1 = sqrt(pow(s1, 2) - *p * *p/pow(1 - *p * u1, 2));
-    sqrt2 = sqrt(pow(s2, 2) - *p * *p/pow(1 - *p * u2, 2));
-    *t += 0.5 * (pow(s1, 2) / sqrt1 + pow(s2, 2) / sqrt2 ) * fabs(dz);
-    rad += 0.5 * ( (*p/(1 - *p * u1) + pow(s1,2) * u1)/sqrt1 + (*p/(1 - *p * u2) + pow(s2,2) * u2)/sqrt2 ) * fabs(dz);
-    tan += 0.5 * ( pow(s1, 2) * (v0 + gv * zi1)/sqrt1 + pow(s2, 2) * (v0 + gv * zi2)/sqrt2) * fabs(dz);
-    wind_offset += 0.5 * (u1 * pow(s1, 2) / sqrt1 + u2 * pow(s2, 2) / sqrt2 ) * fabs(dz); // "drift" from wind, used for energy equation.
-    sqrt1 = sqrt(pow(s1, 2) - p2 * p2/pow(1 - p2 * u1, 2));
-    sqrt2 = sqrt(pow(s2, 2) - p2 * p2/pow(1 - p2 * u2, 2));
-    rad2 += 0.5 * ( (p2/(1 - p2 * u1) + pow(s1,2) * u1)/sqrt1 + (p2/(1 - p2 * u2) + pow(s2,2) * u2)/sqrt2 ) * fabs(dz);
-    wind_offset2 += 0.5 * (u1 * pow(s1, 2) / sqrt1 + u2 * pow(s2, 2) / sqrt2 ) * fabs(dz); // "drift" from wind, used for energy equation.
-  }
-    //  Rprintf("%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n", rad, tan, *t, zi1, zi2, s1, s2, u1, u2, sqrt1, sqrt2);
-		    
-  // Calculate amplitude (several steps)
-  //Rprintf("%f, %f, %f, %f, %f, %f, %f\n", cs, cr, *p, epsr, epss, *zs, *zr);
-  //dpdx = (cs - cr) * *p * *p * epsr * epss/ ((*zs - *zr) * (epss * epss * epsr - epsr * epsr * epss + epsr * *p * *p * cs * cs - epss * *p * *p * cr * cr)); //d(ray parameter)/d(radial distance): used to calculate energy
-  //Rprintf("5\n");
-    
-  //  dpdx = (ps1 - ps2)/(rad - rad2);
-  //E = *p * cs * cs/(rad * (1 - *p * *p * cs * cs)) * dpdx; // arrival energy densiy
-  //  E = ps1 * cs * cs/(rad * (1 - ps1 * ps1 * cs * cs)) * dpdx; // arrival energy density
-
-  //  double ths = atan2(cs * cs/(1/ *p - us) + us, cs * sqrt(1-pow(cs/(1/ *p - us), 2)));
-  //  double thr = atan2(cr * cr/(1/ *p - ur) + ur, cr * sqrt(1-pow(cr/(1/ *p - ur), 2)));
-  //  double ths2 = atan2(cs * cs/(1/ p2 - us) + us, cs * sqrt(1-pow(cs/(1/p2 - us), 2)));
-
-  double ths = asin(cs/(1/ *p - us));
-  double ths2 = asin(cs/(1/p2 - us));
-  double thr = asin(cr/(1/ *p - ur));
-
-  dthdx = (ths - ths2)/(rad - rad2 + wind_offset2 - wind_offset);
-  E = sin(ths) * dthdx/(4 * pi * (rad - wind_offset) * cos(thr));
-  
-  //  Rprintf("%f, %f, %f, %f, %f, %f, %f, %f\n", ths, thr, ths2, dthdx, wind_offset, rad, rad2, E);
-
-  //Rprintf("6\n");
-  lambdar = pow(*c0 + *gc * *zr, 2) * (*rho0 + *grho * *zr); // the lame' parameter at the receiver
-  *A = sqrt(lambdar * E); // arrival amplitude
-
-  // calculate transverse motion (ray can travel perpendicular to azimuth with a transverse wind)
-	  //  tan = gv/(gc_eff*gc_eff) * asin(cs * *p)/ *p + (c0_eff * gv - v0 * gc_eff)/(gc_eff * gc_eff) * log((1 / *p + sqrt(1/(*p * *p) - cs*cs))/cs) - (gv/(gc_eff * gc_eff) * asin(cr * *p)/ *p + (c0_eff*gv - v0*gc_eff)/(gc_eff * gc_eff) * log((1/ *p + sqrt(1/(*p * *p) - cr*cr))/cr));  // tangential motion: did this by hand over multiple days--int v dT = int v dT/dz dz
-  //Rprintf("7\n");
+  // JFA 9/13/2012: YOU CANNOT USE EFFECTIVE SOUND SPEED IN 3D!!! Rewriting using equations from Garces and numeric integration (farther down).  
+  // JFA 11/1/2012: Everything has been rewritten using equations from Garces (wind, everything but power density), Shearer (power density), and my merging of the two (power density in windy atmospheres).  Stuff from Slotnick is useless.
  
+  // If the atmosphere is simple, use simple equations.  Windy atmospheres require numeric integration, which is expensive.
+ 
+  if((fabs(u0) < gc_eps) && (fabs(gu) < gc_eps) && (fabs(v0) < gc_eps) && (fabs(gv) < gc_eps) && (fabs(*gc) < gc_eps)){ // stationary atmosphere with no sound speed variation--easy
+    rad = fabs(*zs - *zr) * *p * *c0/sqrt(1 - *c0 * *c0 * *p * *p);
+    tan = 0;
+    *t = sqrt(rad * rad + pow(*zs - *zr, 2)) / *c0;
+    Pow_dens = 1/(4 * pi * (rad * rad + pow(*zs - *zr, 2))); // 1/area of spherical shell
+  }else if((fabs(u0) < gc_eps) && (fabs(gu) < gc_eps) && (fabs(v0) < gc_eps) && (fabs(gv) < gc_eps)){ // stationary heterogeneous atmosphere--a little harder, still analytical solution
+    
+    // these eps variables are handy; they're proportional to the slope of the ray at the source and receiver
+    epss = sqrt(1 - *p * *p * cs * cs);
+    epsr = sqrt(1 - *p * *p * cr * cr);
+
+    // radial, tangential, and travel time
+    rad = fabs((epss - epsr)/ (*p * *gc)) ;
+    tan = 0;
+    *t = fabs((*zs - *zr)/(cs - cr) * log((cs * (1 + epsr))/(cr * (1 + epss))));
+    // calculate arrival power density.  this requires knowing dtheta/dx, which is done numerically here.  so, another radial distance must be calculated for a slightly offset p.
+
+    double p2 = *p + pow(10, -9); // for use in computing rad2, which is used to find dp/dx
+    double ths = asin(cs/(1/ *p)); // original theta at source
+    double ths2 = asin(cs/(1/p2)); // second theta at source
+    double thr = asin(cr/(1/ *p)); // original theta at receiver
+    double rad2 = fabs((sqrt(1 - p2 * p2 * cs * cs) - sqrt(1 - p2 * p2 * cr * cr))/(p2 * *gc)); // second radial distance
+    
+    dthdx = (ths - ths2)/(rad - rad2); // dtheta/dx calculated numerically
+    Pow_dens = sin(ths) * fabs(dthdx)/(4 * pi * rad * cos(thr)); // power density in W/m^2 at receiver per W source power.  equation taken from Shearer p. 95
+
+  }else{ // if we're here, it's a windy atmosphere and we have to do numerical integration (trapezoidal) of equations from Garces et al. 1998.
+    *t = 0;
+    rad = 0;
+    tan = 0;
+    int nsteps = 100; // this number of intervals seems to work.  more would be more precise, but slower, and calculation time matters.
+    double dz = (*zs - *zr)/nsteps;
+    double zi1, zi2, s1, s2, u1, u2, sqrt1, sqrt2;
+    double p2 = *p + pow(10, -9); // for use in computing rad2, which is used to find dp/dx
+    double rad2 = 0;
+    double wind_offset = 0; 
+    double wind_offset2 = 0;
+
+    // Not going to comment this right now, sorry.
+    for(int i = 0; i < nsteps; i++){
+      zi1 = *zr + i * dz;  // bottom of current layer
+      zi2 = *zr + (i+1)*dz;  // top of current layer
+      s1 = 1/(*c0 + *gc * zi1);  // slowness at bottom
+      s2 = 1/(*c0 + *gc * zi2);  // slowness at top
+      u1 = u0 + gu * zi1;  // wind at bottom
+      u2 = u0 + gu * zi2;  // wind at top
+      sqrt1 = sqrt(pow(s1, 2) - *p * *p/pow(1 - *p * u1, 2));
+      sqrt2 = sqrt(pow(s2, 2) - *p * *p/pow(1 - *p * u2, 2));
+      *t += 0.5 * (pow(s1, 2) / sqrt1 + pow(s2, 2) / sqrt2 ) * fabs(dz);
+      rad += 0.5 * ( (*p/(1 - *p * u1) + pow(s1,2) * u1)/sqrt1 + (*p/(1 - *p * u2) + pow(s2,2) * u2)/sqrt2 ) * fabs(dz);
+      tan += 0.5 * ( pow(s1, 2) * (v0 + gv * zi1)/sqrt1 + pow(s2, 2) * (v0 + gv * zi2)/sqrt2) * fabs(dz);
+      wind_offset += 0.5 * (u1 * pow(s1, 2) / sqrt1 + u2 * pow(s2, 2) / sqrt2 ) * fabs(dz); // "drift" from wind, used for power density equation.
+      sqrt1 = sqrt(pow(s1, 2) - p2 * p2/pow(1 - p2 * u1, 2));
+      sqrt2 = sqrt(pow(s2, 2) - p2 * p2/pow(1 - p2 * u2, 2));
+
+      // these are used for numeric differentiation
+      rad2 += 0.5 * ( (p2/(1 - p2 * u1) + pow(s1,2) * u1)/sqrt1 + (p2/(1 - p2 * u2) + pow(s2,2) * u2)/sqrt2 ) * fabs(dz);
+      wind_offset2 += 0.5 * (u1 * pow(s1, 2) / sqrt1 + u2 * pow(s2, 2) / sqrt2 ) * fabs(dz); // "drift" from wind, used for power density equation.
+    }
+
+    
+    // Calculate power density--same as in windless heterogeneous atmosphere.  We already have a second radial distance from the integration loop.
+
+    double ths = asin(cs/(1/ *p - us));
+    double ths2 = asin(cs/(1/p2 - us));
+    double thr = asin(cr/(1/ *p - ur));
+    
+    //    dthdx = (ths - ths2)/(rad - rad2 + wind_offset2 - wind_offset);
+    //    Pow_dens = sin(ths) * dthdx/(4 * pi * (rad - wind_offset) * cos(thr)); // this is power density in J/m^2 at receiver
+
+    // on second thought, i don't think wind drift should be considered.  Amplitudes will not necessarily be symmetric about the drifted source, and that's ok.
+    dthdx = (ths - ths2)/(rad - rad2);
+    Pow_dens = sin(ths) * dthdx/(4 * pi * rad * cos(thr)); // this is power density in J/m^2
+  }
+
+  // at this point, we have a power density, and it's straightforward to convert to amplitude.
+  impedance = (*c0 + *gc * *zr) * (*rho0 + *grho * *zr); // the lame' parameter at the receiver
+  *A = sqrt(impedance * Pow_dens); // arrival amplitude in Pa for a 1 W source.
+
   // Finally: rotate rad, tan to find outputs x and y
   *x = sin(*az * pi/180) * rad - cos(*az * pi/180) * tan;
   *y = sin(*az * pi/180) * tan + cos(*az * pi/180) * rad;
-  //Rprintf("8\n");
-  //  Rprintf("%f %f %f %f %f\n", *x, *y, *t, *A, *p);
+
+  // just in case there was some problem, make sure it's obvious to the user.
   if(isnan(*t)){
     *x = 1.0/0.0;
     *y = 1.0/0.0;
     *t = 1.0/0.0;
     *A = 0.0/0.0;
   }
-    //Rprintf("%f %f %f %f %f\n", *x, *y, *t, *A, *p);
-      
 }
 
 
@@ -145,9 +144,9 @@ void proplin(double *p, double *az, const double *zs, const double *zr, const do
 
 
 
-void p4xlin(double *x, double *y, const double *zs, const double *zr, const double *c0, const double *gc, const double *wx0, const double *gwx, const double *wy0, const double *gwy, const double *rho0, const double *grho, double *maxerror, double *p, double *az, double *error){
+void p4xlin(double *x, double *y, double *zs, double *zr, double *c0, double *gc, double *wx0, double *gwx, double *wy0, double *gwy, double *rho0, double *grho, double *maxerror, double *p, double *az, double *error){
  
-  double cr, cs, A, B, C, D, Af, Bf, Cf, Df, Amp, t, mx, my, R0, R1, R0f, R1f, Mr, minmin;
+  double cr, cs, A, B, C, D, Af, Bf, Cf, Df, Amp, t, mx, my, R0, R1, R0f, R1f, Mr, minmin, rad;
   double pi = M_PI;
   // initial values for search variables
   double ptol = 0.00001;
@@ -157,14 +156,32 @@ void p4xlin(double *x, double *y, const double *zs, const double *zr, const doub
   *error = 1.0/0.0;
 
   *az = atan2(*x, *y) * 180/pi;
+  rad = sqrt(*x * *x + *y * *y);
 
   // we can use a shortcut if wind and dc/dz are zero: just propagate in a straight line
   double eps = 0.000001;
   if(fabs(*gc) < eps && fabs(*wx0) < eps && fabs(*wy0) < eps && fabs(*gwx) < eps && fabs(*gwy) < eps){
-    *p = sqrt(*x * *x + *y * *y)/sqrt(*x * *x + *y * *y + pow(*zs - *zr, 2))/ *c0;
+    *p = rad/sqrt(pow(rad, 2) + pow(*zs - *zr, 2))/ *c0;
     proplin(p, az, zs, zr, c0, gc, wx0, gwx, wy0, gwy, rho0, grho, &mx, &my, &t, &Amp); // this call changes mx and my
 
     *error = sqrt(pow(mx - *x, 2) + pow(my - *y, 2));
+    return;
+  }
+
+  // we can use a different shortcut if wind is zero.  wolfram alpha kindly provided an equation from hell that returns the ray parameter.  JFA 2012/12/17
+  if(fabs(*wx0) < eps && fabs(*wy0) < eps && fabs(*gwx) < eps && fabs(*gwy) < eps){
+    cr = *c0 + *zr * *gc;
+    cs = *c0 + *zs * *gc;
+    *p = fabs(2 * rad * *gc) / sqrt(pow(cr * cr - cs * cs, 2) + pow(rad * *gc, 2) * (2 * cr * cr + 2 * cs * cs + pow(rad * *gc, 2)));
+    proplin(p, az, zs, zr, c0, gc, wx0, gwx, wy0, gwy, rho0, grho, &mx, &my, &t, &Amp); // this call changes mx and my
+
+    *error = sqrt(pow(mx - *x, 2) + pow(my - *y, 2));
+    // this equation can return extraneous roots, so verify that errors are small.  otherwise, NaN it.
+    if(*error > 0.1){ // use 0.1 instead of *maxerror because errors should be trivial here, and we want it to catch when it enters the shadow zone.
+      *p = 0.0/0.0;
+      *az = 0.0/0.0;
+      *error = 1.0/0.0;
+    }
     return;
   }
 
@@ -336,7 +353,7 @@ void p4xlin(double *x, double *y, const double *zs, const double *zr, const doub
 
 
 
-void makearrivals(const double *xs, const double *ys, const double *zs, const double *xr, const double *yr, const double *zr, const double *dt, const int *nt, const double *timing, const double *c0, const double *gc, const double *wx0, const double *gwx, const double *wy0, const double *gwy, const double *rho0, const double *grho, int *nsrc, int *nrec, double *P){
+void makearrivals(double *xs, double *ys, double *zs, double *xr, double *yr, double *zr, double *dt, int *nt, double *timing, double *c0, double *gc, double *wx0, double *gwx, double *wy0, double *gwy, double *rho0, double *grho, int *nsrc, int *nrec, double *P){
   // P must be defined from calling function as rep(0, nt*nrec)
   //Rprintf("nrec %i, nsrc %i\n", *nrec, *nsrc);
   // initialize variables

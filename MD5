@@ -1,4 +1,4 @@
-5ec06a2910933788f45b4d200109ce52 *DESCRIPTION
+e31b116d1f9da6b499d793acce4a3c66 *DESCRIPTION
 4ef26935eb000a27a47c3422493d7501 *NAMESPACE
 ceae6651c22ac7aef9d9f352fea90863 *R/A2P.lin.R
 9407b696bc752102e06a0927088a4d91 *R/CheckAtm.lin.R
@@ -11,7 +11,6 @@ ccdfcef2367239285aa60a0da88c2ef8 *R/PlotAtm.lin.R
 06068d21b120e9c76c9e47810cd46c59 *R/Prop.lin.R
 0c669d289ad1af6ed3a746e4e859b259 *R/Prop.lin_no_c.R
 94c695eff5588d9c66c377a4f28fc95e *R/RESCALE.R
-32fffc2961dcecc2a01ffe35bb5672ae *R/ShadowZone.lin.R
 36252ebb5bba0b1d5289bf62c2f83359 *R/meshgrid.R
 1a6ce139315b222ea7056add36228f1a *R/meshgridn.R
 1f325bff9a6ce2eaaadaa6b51380e48b *R/sky.colors.R
@@ -25,8 +24,7 @@ d2836e8eedb20ac53966305b7ff2e0ba *man/P4X.lin_no_c.Rd
 ca5d26d86ec23a6550da33de1347e5de *man/Prop.lin.Rd
 fe72030009c75c3349a497903ff8f764 *man/Prop.lin_no_c.Rd
 d3181332857a1d08ea62937df0b65260 *man/RESCALE.Rd
-dcb2d097a4b83b36825acb6352a29158 *man/ShadowZone.lin.Rd
 2737fade80514b83a1ee0bce077943d9 *man/meshgrid.Rd
 c10bf1bf2b2d2eb34dc945289cea6de4 *man/meshgridn.Rd
 d49c5a180edf03f494f9a569b5d8cf97 *man/sky.colors.Rd
-3aa264721f96b42cb055d21a8fc6bbbc *src/AtmRay.c
+4ad6211dec8279e2fb0223755437d64e *src/AtmRay.c
